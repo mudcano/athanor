@@ -1,0 +1,6 @@
+mudtelnet
+setproctitle
+websockets
+uvloop
+dataclasses-json
+orjson
