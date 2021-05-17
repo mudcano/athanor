@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
-from rich.color import ColorSystem
 from typing import List, Set, Optional, Union, Dict
 import time
 from enum import IntEnum
@@ -17,6 +16,15 @@ UNKNOWN = "UNKNOWN"
 class MudProtocol(IntEnum):
     TELNET = 0
     WEBSOCKET = 1
+
+
+#Shamelessly yoinked this IntEnum from Rich for K.I.S.S. purposes.
+class ColorSystem(IntEnum):
+    """One of the 3 color system supported by terminals."""
+    STANDARD = 1
+    EIGHT_BIT = 2
+    TRUECOLOR = 3
+    WINDOWS = 4
 
 
 COLOR_MAP = {
@@ -58,6 +66,8 @@ class ConnectionDetails:
     force_endline: bool = False
     linemode: bool = False
     mssp: bool = False
+    mxp: bool = False
+    mxp_active: bool = False
 
 
 class ConnectionInMessageType(IntEnum):
@@ -155,7 +165,6 @@ class LinkProtocol:
     async def write(self):
         while self.running:
             msg = await self.outbox.get()
-            print(f"{self.service.app.config.name.upper()} SENDING MESSAGE: {msg}")
             if isinstance(msg, str):
                 await self.connection.send(msg)
             else:
@@ -164,10 +173,10 @@ class LinkProtocol:
     async def process_message(self, message):
         if isinstance(message, bytes):
             data = orjson.loads(message.decode())
-            print(f"{self.service.app.config.name.upper()} RECEIVED MESSAGE: {data}")
             await self.service.message_from_link(data)
         else:
             print(f"{self.service.app.config.name} got unknown websocket message: {message}")
+
 
 
 class LinkService(Service):
@@ -221,6 +230,7 @@ class LinkService(Service):
     async def message_from_link(self, message):
         pass
 
+
 class LinkServiceServer(LinkService):
 
     def __init__(self):
@@ -252,7 +262,7 @@ class LinkServiceClient(LinkService):
     async def handle_in_events(self):
         while True:
             msg = await self.in_events.get()
-            await self.app.game.in_events.put(msg)
+            await self.app.conn.in_events.put(msg)
 
     async def handle_out_events(self):
         while True:

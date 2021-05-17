@@ -150,9 +150,9 @@ class AthanorLauncher:
                 if args.app:
                     if not (found := partial_match(args.app[0], l_config.applications)):
                         raise ValueError(f"No registered Athanor application: {args.app[0]}")
-                    APPLICATIONS = [found]
+                    self.applications = [found]
                 else:
-                    APPLICATIONS = l_config.applications
+                    self.applications = l_config.applications
 
             if not (op_func := self.operations.get(option, None)):
                 raise ValueError(f"No operation: {option}")

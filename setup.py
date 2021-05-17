@@ -1,10 +1,8 @@
 import os
 import sys
-from setuptools import setup, find_packages
+from setuptools import setup
 
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
-
-VERSION_PATH = os.path.join("athanor", "VERSION.txt")
 OS_WINDOWS = os.name == "nt"
 
 
@@ -23,31 +21,6 @@ def get_requirements():
     return reqs
 
 
-def get_version():
-    """
-    When updating the athanor package for release, remember to increment the
-    version number in athanor/VERSION.txt
-    """
-    return open(VERSION_PATH).read().strip()
-
-
-def package_data():
-    """
-    By default, the distribution tools ignore all non-python files.
-
-    Make sure we get everything.
-    """
-    file_set = []
-    for d in ("athanor", "athanor_portal", "athanor_server"):
-        for root, dirs, files in os.walk(d):
-            for f in files:
-                if ".git" in f.split(os.path.normpath(os.path.join(root, f))):
-                    # Prevent the repo from being added.
-                    continue
-                file_name = os.path.relpath(os.path.join(root, f), d)
-                file_set.append(file_name)
-    return file_set
-
 def get_scripts():
     """
     Determine which executable scripts should be added. For Windows,
@@ -65,25 +38,30 @@ def get_scripts():
 # setup the package
 setup(
     name="athanor",
-    version=get_version(),
+    version="0.3.0",
     author="Volund",
     maintainer="Volund",
     url="https://github.com/volundmush/athanor",
     description="",
-    license="???",
+    license="MIT",
     long_description="""
     
     """,
-    long_description_content_type="text/markdown",
-    packages=find_packages(),
-   # install_requires=get_requirements(),
-    package_data={"": package_data()},
+    packages=["athanor", "athanor_portal", "athanor_server"],
+    install_requires=get_requirements(),
     zip_safe=False,
     scripts=get_scripts(),
     classifiers=[
-
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.5",
+        "Intended Audience :: Developers",
+        "Topic :: Games/Entertainment :: Multi-User Dungeons (MUD)",
+        "Topic :: Games/Entertainment :: Puzzle Games",
+        "Topic :: Games/Entertainment :: Role-Playing",
+        "Topic :: Games/Entertainment :: Simulation",
+        "Topic :: Software Development :: Libraries :: Application Frameworks",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     project_urls={
         "Source": "https://github.com/volundmush/athanor",
         "Issue tracker": "https://github.com/volundmush/athanor/issues",

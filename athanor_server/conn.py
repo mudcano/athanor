@@ -2,7 +2,6 @@ from athanor.app import Service
 import asyncio
 from typing import Optional, Union, Dict, Set, List
 
-from collections import OrderedDict
 from athanor.shared import ConnectionDetails
 from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
 from athanor.shared import PortalOutMessageType, PortalOutMessage, ServerInMessageType, ServerInMessage
@@ -10,16 +9,28 @@ from athanor.shared import PortalOutMessageType, PortalOutMessage, ServerInMessa
 
 class Connection:
     def __init__(self, service: "ConnectionService", details: ConnectionDetails):
+        self.client_id = details.client_id
         self.service = service
         self.details: ConnectionDetails = details
         self.in_events: List[ConnectionInMessage] = list()
         self.out_events: List[ConnectionOutMessage] = list()
 
-    def update(self, details: ConnectionDetails):
+    def on_update(self, details: ConnectionDetails):
         self.details = details
 
-    def process_event(self, ev: ConnectionInMessage):
-        print(f"{self} received message: {ev}")
+    def on_process_event(self, ev: ConnectionInMessage):
+        pass
+
+    def on_client_connect(self):
+        pass
+
+    def on_client_disconnect(self):
+        pass
+
+    def on_server_disconnect(self):
+        pass
+
+    def flush_out_events(self):
         pass
 
 
@@ -52,17 +63,14 @@ class ConnectionService(Service):
     async def handle_out_events(self):
         pass
 
-    def greet_client(self, conn: Connection):
-        pass
-
     def get_or_create_client(self, details) -> Connection:
         if (conn := self.connections.get(details.client_id, None)):
-            conn.update(details)
+            conn.on_update(details)
             return conn
         else:
             conn = self.conn_class(self, details)
             self.connections[details.client_id] = conn
-            self.greet_client(conn)
+            conn.on_client_connect()
             return conn
 
     def process_hello(self, msg: ServerInMessage):
@@ -88,7 +96,7 @@ class ConnectionService(Service):
             if ev.msg_type == ConnectionInMessageType.DISCONNECT:
                 self.remove_client(conn)
             else:
-                conn.process_event(ev)
+                conn.on_process_event(ev)
         else:
             pass
 

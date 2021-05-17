@@ -16,4 +16,4 @@ class LinkService(LinkServiceClient):
         if msg.msg_type == ServerInMessageType.SYSTEM:
             pass
         else:
-            await self.app.game.in_events.put(msg)
+            await self.app.conn.in_events.put(msg)

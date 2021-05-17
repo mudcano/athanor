@@ -10,6 +10,8 @@ from enum import IntEnum
 from athanor.shared import LinkServiceServer, PortalOutMessageType, PortalOutMessage, ConnectionInMessage, ConnectionInMessageType
 from athanor.shared import ServerInMessageType, ServerInMessage, ConnectionOutMessage, ConnectionOutMessageType
 import os
+import time
+
 
 class MudProtocol(IntEnum):
     TELNET = 0
@@ -124,6 +126,9 @@ class NetService(Service):
 
         while True:
             ended = {conn for conn in self.mudconnections.values() if conn.ended}
+            not_ready = {conn for conn in self.mudconnections.values() if not conn.started}
+            for conn in not_ready:
+                conn.check_ready()
 
             if self.in_conn_events:
                 data = [ev.to_dict() for ev in self.in_conn_events]

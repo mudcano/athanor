@@ -15,9 +15,9 @@ uvloop.install()
 class BaseConfig:
 
     def __init__(self):
-        self.name = 'pymush'
-        self.process_name = "PyMUSH Application"
-        self.application = 'pymush.app.Application'
+        self.name = 'athanor'
+        self.process_name = "Athanor Application"
+        self.application = 'athanor.app.Application'
         self.classes = defaultdict(dict)
         self.interval = 0.01
         self.interfaces = dict()

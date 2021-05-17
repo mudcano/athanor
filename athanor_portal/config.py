@@ -6,7 +6,7 @@ class Config(BaseConfig):
     def __init__(self):
         super().__init__()
         self.name = "portal"
-        self.process_name = "PyMUSH Portal"
+        self.process_name = "Athanor Portal"
         self.application = "athanor_portal.app.Application"
         self.listeners = dict()
 

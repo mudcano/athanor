@@ -7,14 +7,14 @@ import traceback
 
 
 def main():
-    if (new_cwd := os.environ.get("PYMUSH_PROFILE")):
+    if (new_cwd := os.environ.get("ATHANOR_PROFILE")):
         if not os.path.exists(new_cwd):
-            raise ValueError("Improper PyMUSH profile!")
+            raise ValueError("Improper Athanor profile!")
         os.chdir(os.path.abspath(new_cwd))
         sys.path.insert(0, os.getcwd())
 
-    if not (app_name := os.environ.get("PYMUSH_APPNAME")):
-        raise ValueError("Improper environment variables. needs PYMUSH_APPNAME")
+    if not (app_name := os.environ.get("ATHANOR_APPNAME")):
+        raise ValueError("Improper environment variables. needs ATHANOR_APPNAME")
 
     # Step 1: get settings from profile.
     try:

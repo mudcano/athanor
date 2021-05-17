@@ -1,11 +1,11 @@
 from asyncio import Protocol, transports
 from typing import Optional, Union, Dict, Set, List
 from .conn import MudConnection
-from mudtelnet.mudtelnet import TelnetFrame, TelnetConnection, TelnetOutMessage, TelnetOutMessageType
-from mudtelnet.mudtelnet import TelnetInMessage, TelnetInMessageType
+from mudtelnet import TelnetFrame, TelnetConnection, TelnetOutMessage, TelnetOutMessageType
+from mudtelnet import TelnetInMessage, TelnetInMessageType
 from athanor.shared import COLOR_MAP
 from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
-
+import time
 
 class TelnetMudConnection(MudConnection, Protocol):
 
@@ -17,9 +17,20 @@ class TelnetMudConnection(MudConnection, Protocol):
         self.transport: Optional[transports.Transport] = None
         self.in_buffer = bytearray()
 
+    def on_start(self):
+        super().on_start()
+        self.telnet_in_events.extend(self.telnet_pending_events)
+        self.telnet_pending_events.clear()
+        if self.telnet_in_events:
+            self.process_telnet_events()
+
+    def check_ready(self):
+        if (time.time() - self.created) > 0.3:
+            self.on_start()
+
     def data_received(self, data: bytearray):
         self.in_buffer.extend(data)
-        self.started = True
+
         while True:
             frame, size = TelnetFrame.parse(self.in_buffer)
             if not frame:
@@ -27,7 +38,7 @@ class TelnetMudConnection(MudConnection, Protocol):
             del self.in_buffer[:size]
             events_buffer = self.telnet_in_events if self.started else self.telnet_pending_events
             out_buffer = bytearray()
-            changed = self.telnet.process_input_message(frame, out_buffer, events_buffer)
+            changed = self.telnet.process_frame(frame, out_buffer, events_buffer)
             if out_buffer:
                 self.transport.write(out_buffer)
             if changed:
@@ -41,7 +52,9 @@ class TelnetMudConnection(MudConnection, Protocol):
 
     def connection_made(self, transport: transports.Transport) -> None:
         self.transport = transport
-        self.details.host_address = transport.get_extra_info('peername')
+        addr, port = transport.get_extra_info('peername')
+        self.details.host_address = addr
+        self.details.host_port = port
         out_buffer = bytearray()
         self.telnet.start(out_buffer)
         self.running = True
@@ -111,6 +124,6 @@ class TelnetMudConnection(MudConnection, Protocol):
         msg = self.conn_out_to_telnet_out(ev)
         if msg:
             outbox = bytearray()
-            self.telnet.process_output_message(msg, outbox)
+            self.telnet.process_out_message(msg, outbox)
             if outbox:
                 self.transport.write(outbox)

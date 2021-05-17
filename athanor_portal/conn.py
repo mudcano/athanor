@@ -30,3 +30,11 @@ class MudConnection:
 
     def process_out_event(self, ev: ConnectionOutMessage):
         pass
+
+    def on_start(self):
+        self.started = True
+        self.in_events.append(ConnectionInMessage(ConnectionInMessageType.READY, self.conn_id, self.details))
+
+
+    def check_ready(self):
+        pass
