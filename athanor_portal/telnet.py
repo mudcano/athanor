@@ -7,6 +7,7 @@ from athanor.shared import COLOR_MAP
 from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
 import time
 
+
 class TelnetMudConnection(MudConnection, Protocol):
 
     def __init__(self, listener):

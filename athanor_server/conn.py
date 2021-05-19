@@ -1,7 +1,7 @@
 from athanor.app import Service
 import asyncio
 from typing import Optional, Union, Dict, Set, List
-
+import os
 from athanor.shared import ConnectionDetails
 from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
 from athanor.shared import PortalOutMessageType, PortalOutMessage, ServerInMessageType, ServerInMessage
@@ -61,7 +61,18 @@ class ConnectionService(Service):
                     self.process_events(msg)
 
     async def handle_out_events(self):
-        pass
+        while True:
+            events = list()
+            for conn in self.connections.values():
+                conn.flush_out_events()
+                if conn.out_events:
+                    events.extend(conn.out_events)
+                    conn.out_events.clear()
+
+            if events:
+                await self.app.link.out_events.put(PortalOutMessage(PortalOutMessageType.EVENTS, os.getpid(), events))
+            await asyncio.sleep(0.1)
+
 
     def get_or_create_client(self, details) -> Connection:
         if (conn := self.connections.get(details.client_id, None)):

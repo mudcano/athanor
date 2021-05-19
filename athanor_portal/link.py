@@ -17,10 +17,8 @@ class LinkService(LinkServiceServer):
                     if c.started]
             out_msg = ServerInMessage(ServerInMessageType.HELLO, os.getpid(), data)
             await self.link.outbox.put(out_msg)
-        elif msg.msg_type == PortalOutMessageType.EVENTS:
-            pass
-        elif msg.msg_type == PortalOutMessageType.SYSTEM:
-            pass
+        else:
+            await self.app.net.out_events.put(msg)
 
     async def handle_in_events(self):
         while True:

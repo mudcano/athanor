@@ -165,18 +165,19 @@ class LinkProtocol:
     async def write(self):
         while self.running:
             msg = await self.outbox.get()
+            #print(f"{self.service.app.config.name.upper()} SENDING MESSAGE: {msg}")
             if isinstance(msg, str):
                 await self.connection.send(msg)
             else:
                 await self.connection.send(orjson.dumps(msg))
 
     async def process_message(self, message):
+        #print(f"{self.service.app.config.name.upper()} RECEIVED MESSAGE: {message}")
         if isinstance(message, bytes):
             data = orjson.loads(message.decode())
             await self.service.message_from_link(data)
         else:
             print(f"{self.service.app.config.name} got unknown websocket message: {message}")
-
 
 
 class LinkService(Service):

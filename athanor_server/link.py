@@ -1,6 +1,7 @@
 from athanor.shared import LinkServiceClient, PortalOutMessageType, PortalOutMessage
 from athanor.shared import ServerInMessageType, ServerInMessage
 import os
+import asyncio
 
 
 class LinkService(LinkServiceClient):
@@ -17,3 +18,20 @@ class LinkService(LinkServiceClient):
             pass
         else:
             await self.app.conn.in_events.put(msg)
+
+    async def async_run(self):
+        await asyncio.gather(self.async_link(), self.handle_in_events(), self.handle_out_events())
+
+    async def handle_in_events(self):
+        pass
+
+    async def handle_out_events(self):
+        while True:
+            msg = await self.out_events.get()
+
+            while msg:
+                if self.link:
+                    await self.link.outbox.put(msg)
+                    msg = None
+                else:
+                    await asyncio.sleep(0.1)
