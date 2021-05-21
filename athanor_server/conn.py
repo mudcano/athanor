@@ -9,11 +9,14 @@ from athanor.shared import PortalOutMessageType, PortalOutMessage, ServerInMessa
 
 class Connection:
     def __init__(self, service: "ConnectionService", details: ConnectionDetails):
-        self.client_id = details.client_id
         self.service = service
         self.details: ConnectionDetails = details
         self.in_events: List[ConnectionInMessage] = list()
         self.out_events: List[ConnectionOutMessage] = list()
+
+    @property
+    def client_id(self):
+        return self.details.client_id
 
     def on_update(self, details: ConnectionDetails):
         self.details = details

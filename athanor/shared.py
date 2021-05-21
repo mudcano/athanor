@@ -17,6 +17,14 @@ class MudProtocol(IntEnum):
     TELNET = 0
     WEBSOCKET = 1
 
+    def __str__(self):
+        if self == 0:
+            return "Telnet"
+        elif self == 1:
+            return "WebSocket"
+        else:
+            return "Unknown"
+
 
 #Shamelessly yoinked this IntEnum from Rich for K.I.S.S. purposes.
 class ColorSystem(IntEnum):
@@ -68,6 +76,7 @@ class ConnectionDetails:
     mssp: bool = False
     mxp: bool = False
     mxp_active: bool = False
+    oob: bool = False
 
 
 class ConnectionInMessageType(IntEnum):
