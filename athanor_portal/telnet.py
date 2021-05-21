@@ -33,10 +33,9 @@ class TelnetMudConnection(MudConnection, Protocol):
         self.in_buffer.extend(data)
 
         while True:
-            frame, size = TelnetFrame.parse(self.in_buffer)
+            frame = TelnetFrame.parse_consume(self.in_buffer)
             if not frame:
                 break
-            del self.in_buffer[:size]
             events_buffer = self.telnet_in_events if self.started else self.telnet_pending_events
             out_buffer = bytearray()
             changed = self.telnet.process_frame(frame, out_buffer, events_buffer)
