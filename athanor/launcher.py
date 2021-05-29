@@ -102,19 +102,10 @@ class AthanorLauncher:
 
     def operation_passthru(self, op, args, unknown):
         """
-        God only knows what people typed here. Let Django figure it out.
+        God only knows what people typed here. Let their program figure it out! Overload this to
+        process the operation.
         """
-        try:
-            launcher_module = importlib.import_module('appdata.launcher')
-            launcher = launcher_module.RunOperation
-        except Exception as e:
-            raise Exception(f"Unsupported command {op}")
-
-        try:
-            launcher(op, args, unknown)
-        except Exception as e:
-            print(e)
-            raise Exception(f"Could not import settings!")
+        raise Exception(f"Unsupported command {op}")
 
     def option_init(self, name, un_args):
         prof_path = os.path.join(os.getcwd(), name)
