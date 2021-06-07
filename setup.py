@@ -35,6 +35,12 @@ def get_scripts():
     else:
         return [os.path.join("bin", "unix", "athanor")]
 
+
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 # setup the package
 setup(
     name="athanor",
@@ -44,10 +50,8 @@ setup(
     url="https://github.com/volundmush/athanor",
     description="",
     license="MIT",
-    long_description="""
-    A library meant to take the boilerplate pain out of creating new MUD, MUCK, MUSH, MUX, etc - servers. A barebones
-    dual-process application framework with all the batteries included for networking logic.
-    """,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     packages=["athanor", "athanor_portal", "athanor_server"],
     install_requires=get_requirements(),
     zip_safe=False,
