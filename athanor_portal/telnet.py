@@ -1,11 +1,14 @@
+import time
+
 from asyncio import Protocol, transports
 from typing import Optional, Union, Dict, Set, List
-from .conn import MudConnection
+
 from mudtelnet import TelnetFrame, TelnetConnection, TelnetOutMessage, TelnetOutMessageType
 from mudtelnet import TelnetInMessage, TelnetInMessageType
 from athanor.shared import COLOR_MAP
 from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
-import time
+
+from .conn import MudConnection
 
 
 class TelnetMudConnection(MudConnection, Protocol):

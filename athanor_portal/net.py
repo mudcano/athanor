@@ -1,16 +1,18 @@
 import ssl
 import asyncio
-from typing import Optional, Union, List, Dict, Set
-from athanor.app import Service
 import websockets
+import os
+
+from typing import Optional, Dict
+from enum import IntEnum
+from athanor.app import Service
+
+from athanor.shared import PortalOutMessageType
+from athanor.shared import ServerInMessageType, ServerInMessage, ConnectionOutMessage, ConnectionOutMessageType
+
 from .conn import MudConnection
 from .telnet import TelnetMudConnection
 from .websocket import WebSocketConnection
-from enum import IntEnum
-from athanor.shared import LinkServiceServer, PortalOutMessageType, PortalOutMessage, ConnectionInMessage, ConnectionInMessageType
-from athanor.shared import ServerInMessageType, ServerInMessage, ConnectionOutMessage, ConnectionOutMessageType
-import os
-import time
 
 
 class MudProtocol(IntEnum):
@@ -35,7 +37,7 @@ class MudListener:
         if self.protocol == MudProtocol.TELNET:
             loop = asyncio.get_event_loop()
             self.server = await loop.create_server(self.accept_telnet, self.interface, self.port,
-                                             ssl=self.ssl_context, start_serving=False)
+                                                   ssl=self.ssl_context, start_serving=False)
         elif self.protocol == MudProtocol.WEBSOCKET:
             self.server = websockets.serve(self.accept_websocket, self.interface, self.port,
                                            ssl=self.ssl_context)
@@ -61,7 +63,8 @@ class NetService(Service):
     __slots__ = ['app', 'ssl_contexts', 'listeners', 'listeners', 'mudconnections', 'interfaces', 'selector',
                  'ready_listeners', 'ready_readers', 'ready_writers']
 
-    def __init__(self):
+    def __init__(self, app):
+        super().__init__(app)
         self.app.net = self
         self.listeners: Dict[str, MudListener] = dict()
         self.mudconnections: Dict[str, MudConnection] = dict()
@@ -79,10 +82,10 @@ class NetService(Service):
             raise ValueError(f"Interface not registered: {interface}")
         if port < 0 or port > 65535:
             raise ValueError(f"Invalid port: {port}. Port must be number between 0 and 65535")
-        ssl = self.app.config.tls_contexts.get(ssl_context, None)
-        if ssl_context and not ssl:
+        use_ssl = self.app.config.tls_contexts.get(ssl_context, None)
+        if ssl_context and not use_ssl:
             raise ValueError(f"SSL Context not registered: {ssl_context}")
-        listener = MudListener(self, name, host, port, protocol, ssl_context=ssl)
+        listener = MudListener(self, name, host, port, protocol, ssl_context=use_ssl)
         self.listeners[name] = listener
 
     def setup(self):
@@ -91,7 +94,8 @@ class NetService(Service):
                 protocol = MudProtocol(config.get("protocol", -1))
             except ValueError:
                 raise ValueError(f"Must provide a valid protocol for {name}!")
-            self.register_listener(name, config.get("interface", None), config.get("port", -1), protocol, config.get("ssl", None))
+            self.register_listener(name, config.get("interface", None), config.get("port", -1), protocol,
+                                   config.get("ssl", None))
 
     async def async_setup(self):
         self.in_events = asyncio.Queue()
@@ -100,7 +104,8 @@ class NetService(Service):
             await listener.async_setup()
 
     async def async_run(self):
-        gathered = asyncio.gather(self.poll_in_events(), self.poll_out_events(), *[l.run() for l in self.listeners.values()])
+        gathered = asyncio.gather(self.poll_in_events(), self.poll_out_events(),
+                                  *[listener.run() for listener in self.listeners.values()])
         await gathered
 
     async def poll_out_events(self):

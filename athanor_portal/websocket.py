@@ -1,9 +1,15 @@
 import asyncio
-from . conn import MudConnection
+
 from websockets.exceptions import ConnectionClosedError, ConnectionClosed, ConnectionClosedOK
+
+from . conn import MudConnection
+
 
 
 class WebSocketConnection(MudConnection):
+    """
+    TODO: Everything. Websockets are not ready yet!
+    """
 
     def __init__(self, listener, ws, path):
         super().__init__(listener)

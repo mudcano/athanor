@@ -176,7 +176,7 @@ class lazy_property:
         return value
 
 
-def fresh_uuid4(existing):
+def fresh_uuid4(existing) -> uuid:
     """
     Given a list of UUID4s, generate a new one that's not already used.
     Yes, I know this is silly. UUIDs are meant to be unique by sheer statistic unlikelihood of a conflict.
@@ -189,7 +189,20 @@ def fresh_uuid4(existing):
     return fresh_uuid
 
 
-def partial_match(match_text: str, candidates, key=str):
+def partial_match(match_text: str, candidates: typing.Iterable[typing.Any], key: callable = str) -> typing.Optional[typing.Any]:
+    """
+    Given a list of candidates and a string to search for, does a case-insensitive partial name search against all
+    candidates, preferring exact matches.
+
+    Args:
+        match_text (str): The string being searched for.
+        candidates (list of obj): A list of any kind of object that key can turn into a string to search.
+        key (callable): A callable that must return a string, used to do the search. this 'converts' the objects in the
+            candidate list to strings.
+
+    Returns:
+        Any or None.
+    """
     candidate_list = sorted(candidates, key=lambda item: len(key(item)))
     for candidate in candidate_list:
         if match_text.lower() == key(candidate).lower():

@@ -1,9 +1,8 @@
-from athanor.app import Service
 import asyncio
-from typing import Optional
+import os
+
 from athanor.shared import LinkServiceServer, PortalOutMessageType, PortalOutMessage
 from athanor.shared import ServerInMessageType, ServerInMessage
-import os
 
 
 class LinkService(LinkServiceServer):

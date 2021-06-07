@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import argparse
 import os
 import sys
@@ -7,7 +5,6 @@ import shutil
 import subprocess
 import shlex
 import signal
-import importlib
 
 import athanor
 from athanor.utils import partial_match
@@ -32,6 +29,9 @@ class AthanorLauncher:
         self.profile_path = None
 
     def create_parser(self):
+        """
+        Creates an ArgumentParser for this launcher.
+        """
         parser = argparse.ArgumentParser(description="BOO", formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument("--init", nargs=1, action="store", dest="init", metavar="<folder>")
         parser.add_argument("--app", nargs=1, action="store", dest="app", metavar="<folder>")
@@ -39,6 +39,15 @@ class AthanorLauncher:
         return parser
 
     def ensure_running(self, app):
+        """
+        Checks whether a named app is running.
+
+        Args:
+            app (str): The name of the appplication being checked.
+
+        Raises:
+            ValueError (str): If the app is not running.
+        """
         pidfile = os.path.join(os.getcwd(), f"{app}.pid")
         if not os.path.exists(pidfile):
             raise ValueError(f"Process {app} is not running!")
@@ -55,6 +64,15 @@ class AthanorLauncher:
         return True
 
     def ensure_stopped(self, app):
+        """
+        Checks whether a named app is not running.
+
+        Args:
+            app (str): The name of the appplication being checked.
+
+        Raises:
+            ValueError (str): If the app is running.
+        """
         pidfile = os.path.join(os.getcwd(), f"{app}.pid")
         if not os.path.exists(pidfile):
             return True
@@ -132,12 +150,20 @@ class AthanorLauncher:
                 operation = '_noop'
 
             if option in ['start', 'stop', '_passthru']:
+                # first, ensure we are running this program from the proper directory.
                 self.set_profile_path(args)
                 os.chdir(self.profile_path)
+
+                # next, insert the new cwd into path.
                 import sys
                 sys.path.insert(0, os.getcwd())
+
+                # now we should be able to import appdata!
                 from appdata.config import Launcher
                 l_config = Launcher()
+                l_config.setup()
+
+                # choose either all apps or a specific app to focus on.
                 if args.app:
                     if not (found := partial_match(args.app[0], l_config.applications)):
                         raise ValueError(f"No registered Athanor application: {args.app[0]}")
@@ -145,6 +171,7 @@ class AthanorLauncher:
                 else:
                     self.applications = l_config.applications
 
+            # Find and execute the operation.
             if not (op_func := self.operations.get(option, None)):
                 raise ValueError(f"No operation: {option}")
             op_func(operation, args, unknown_args)

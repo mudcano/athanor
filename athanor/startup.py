@@ -2,8 +2,9 @@
 import os
 import sys
 import setproctitle
-from athanor.utils import import_from_module
 import traceback
+
+from athanor.utils import import_from_module
 
 
 def main():

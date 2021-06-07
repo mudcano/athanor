@@ -35,6 +35,5 @@ class MudConnection:
         self.started = True
         self.in_events.append(ConnectionInMessage(ConnectionInMessageType.READY, self.conn_id, self.details))
 
-
     def check_ready(self):
         pass

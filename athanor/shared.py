@@ -1,13 +1,15 @@
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
-from typing import List, Set, Optional, Union, Dict
 import time
-from enum import IntEnum
 import orjson
 import asyncio
-from athanor.app import Service
 import websockets
+
+from typing import Optional
+from enum import IntEnum
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 from websockets.exceptions import ConnectionClosedError, ConnectionClosed, ConnectionClosedOK
+
+from athanor.app import Service
 
 
 UNKNOWN = "UNKNOWN"
@@ -88,6 +90,7 @@ class ConnectionInMessageType(IntEnum):
     DISCONNECT = 5
     UPDATE = 6
 
+
 @dataclass_json
 @dataclass
 class ConnectionInMessage:
@@ -103,6 +106,7 @@ class ConnectionOutMessageType(IntEnum):
     OOB = 3
     MSSP = 4
     DISCONNECT = 5
+
 
 @dataclass_json
 @dataclass
@@ -131,6 +135,7 @@ class ServerInMessageType(IntEnum):
     HELLO = 1
     SYSTEM = 2
 
+
 @dataclass_json
 @dataclass
 class ServerInMessage:
@@ -147,6 +152,7 @@ class LinkProtocol:
         self.path = path
         self.outbox = asyncio.Queue()
         self.task = None
+        self.running = False
 
     async def run(self):
         self.running = True
@@ -191,7 +197,8 @@ class LinkProtocol:
 
 class LinkService(Service):
 
-    def __init__(self):
+    def __init__(self, app):
+        super().__init__(app)
         self.app.link = self
         self.link: Optional[LinkProtocol] = None
         self.interface: Optional[str] = None
@@ -243,8 +250,8 @@ class LinkService(Service):
 
 class LinkServiceServer(LinkService):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, app):
+        super().__init__(app)
         self.listener = None
 
     async def async_run(self):

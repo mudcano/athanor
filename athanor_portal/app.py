@@ -1,6 +1,7 @@
 from athanor.app import Application as BaseApplication
 from athanor_portal.config import Config
 from typing import Optional
+
 from .net import NetService
 from .link import LinkService
 

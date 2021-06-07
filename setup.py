@@ -38,14 +38,15 @@ def get_scripts():
 # setup the package
 setup(
     name="athanor",
-    version="0.3.0",
+    version="0.1.0",
     author="Volund",
     maintainer="Volund",
     url="https://github.com/volundmush/athanor",
     description="",
     license="MIT",
     long_description="""
-    
+    A library meant to take the boilerplate pain out of creating new MUD, MUCK, MUSH, MUX, etc - servers. A barebones
+    dual-process application framework with all the batteries included for networking logic.
     """,
     packages=["athanor", "athanor_portal", "athanor_server"],
     install_requires=get_requirements(),
@@ -53,7 +54,7 @@ setup(
     scripts=get_scripts(),
     classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.8",
         "Intended Audience :: Developers",
         "Topic :: Games/Entertainment :: Multi-User Dungeons (MUD)",
         "Topic :: Games/Entertainment :: Puzzle Games",
