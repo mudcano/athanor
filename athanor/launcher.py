@@ -11,20 +11,26 @@ from athanor.utils import partial_match
 
 
 class AthanorLauncher:
-    name = 'Athanor'
+    name = "Athanor"
     root = os.path.abspath(os.path.dirname(athanor.__file__))
-    startup = os.path.join(os.path.abspath(os.path.dirname(athanor.__file__)), 'startup.py')
-    game_template = os.path.abspath(os.path.join(os.path.abspath(os.path.dirname(athanor.__file__)), 'game_template'))
+    startup = os.path.join(
+        os.path.abspath(os.path.dirname(athanor.__file__)), "startup.py"
+    )
+    game_template = os.path.abspath(
+        os.path.join(
+            os.path.abspath(os.path.dirname(athanor.__file__)), "game_template"
+        )
+    )
 
     def __init__(self):
         self.parser = self.create_parser()
         self.applications = []
-        self.choices = ['start', 'stop', 'noop']
+        self.choices = ["start", "stop", "noop"]
         self.operations = {
-            '_noop': self.operation_noop,
-            'start': self.operation_start,
-            'stop': self.operation_stop,
-            '_passthru': self.operation_passthru,
+            "_noop": self.operation_noop,
+            "start": self.operation_start,
+            "stop": self.operation_stop,
+            "_passthru": self.operation_passthru,
         }
         self.profile_path = None
 
@@ -32,10 +38,22 @@ class AthanorLauncher:
         """
         Creates an ArgumentParser for this launcher.
         """
-        parser = argparse.ArgumentParser(description="BOO", formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument("--init", nargs=1, action="store", dest="init", metavar="<folder>")
-        parser.add_argument("--app", nargs=1, action="store", dest="app", metavar="<folder>")
-        parser.add_argument("operation", nargs="?", action="store", metavar="<operation>", default="_noop")
+        parser = argparse.ArgumentParser(
+            description="BOO", formatter_class=argparse.RawTextHelpFormatter
+        )
+        parser.add_argument(
+            "--init", nargs=1, action="store", dest="init", metavar="<folder>"
+        )
+        parser.add_argument(
+            "--app", nargs=1, action="store", dest="app", metavar="<folder>"
+        )
+        parser.add_argument(
+            "operation",
+            nargs="?",
+            action="store",
+            metavar="<operation>",
+            default="_noop",
+        )
         return parser
 
     def ensure_running(self, app):
@@ -87,7 +105,7 @@ class AthanorLauncher:
 
     def set_profile_path(self, args):
         cur_dir = os.getcwd()
-        if not os.path.exists(os.path.join(cur_dir, 'appdata')):
+        if not os.path.exists(os.path.join(cur_dir, "appdata")):
             raise ValueError(f"Current directory is not a valid {self.name} profile!")
         self.profile_path = cur_dir
 
@@ -97,7 +115,7 @@ class AthanorLauncher:
                 raise ValueError(f"Process {app} is already running!")
         for app in self.applications:
             env = os.environ.copy()
-            env['ATHANOR_PROFILE'] = self.profile_path
+            env["ATHANOR_PROFILE"] = self.profile_path
             env["ATHANOR_APPNAME"] = app
             cmd = f"{sys.executable} {self.startup}"
             subprocess.Popen(shlex.split(cmd), env=env)
@@ -129,7 +147,10 @@ class AthanorLauncher:
         prof_path = os.path.join(os.getcwd(), name)
         if not os.path.exists(prof_path):
             shutil.copytree(self.game_template, prof_path)
-            os.rename(os.path.join(prof_path, 'gitignore'), os.path.join(prof_path, '.gitignore'))
+            os.rename(
+                os.path.join(prof_path, "gitignore"),
+                os.path.join(prof_path, ".gitignore"),
+            )
             print(f"Game Profile created at {prof_path}")
         else:
             print(f"Game Profile at {prof_path} already exists!")
@@ -141,32 +162,36 @@ class AthanorLauncher:
         operation = option
 
         if option not in self.choices:
-            option = '_passthru'
+            option = "_passthru"
 
         try:
             if args.init:
                 self.option_init(args.init[0], unknown_args)
-                option = '_noop'
-                operation = '_noop'
+                option = "_noop"
+                operation = "_noop"
 
-            if option in ['start', 'stop', '_passthru']:
+            if option in ["start", "stop", "_passthru"]:
                 # first, ensure we are running this program from the proper directory.
                 self.set_profile_path(args)
                 os.chdir(self.profile_path)
 
                 # next, insert the new cwd into path.
                 import sys
+
                 sys.path.insert(0, os.getcwd())
 
                 # now we should be able to import appdata!
                 from appdata.config import Launcher
+
                 l_config = Launcher()
                 l_config.setup()
 
                 # choose either all apps or a specific app to focus on.
                 if args.app:
                     if not (found := partial_match(args.app[0], l_config.applications)):
-                        raise ValueError(f"No registered Athanor application: {args.app[0]}")
+                        raise ValueError(
+                            f"No registered Athanor application: {args.app[0]}"
+                        )
                     self.applications = [found]
                 else:
                     self.applications = l_config.applications
@@ -179,5 +204,6 @@ class AthanorLauncher:
         except Exception as e:
             import sys
             import traceback
+
             traceback.print_exc(file=sys.stdout)
             print(f"Something done goofed: {e}")

@@ -3,8 +3,18 @@ import asyncio
 from typing import Optional, Union, Dict, Set, List
 import os
 from athanor.shared import ConnectionDetails
-from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
-from athanor.shared import PortalOutMessageType, PortalOutMessage, ServerInMessageType, ServerInMessage
+from athanor.shared import (
+    ConnectionInMessageType,
+    ConnectionOutMessage,
+    ConnectionInMessage,
+    ConnectionOutMessageType,
+)
+from athanor.shared import (
+    PortalOutMessageType,
+    PortalOutMessage,
+    ServerInMessageType,
+    ServerInMessage,
+)
 
 
 class Connection:
@@ -13,6 +23,8 @@ class Connection:
         self.details: ConnectionDetails = details
         self.in_events: List[ConnectionInMessage] = list()
         self.out_events: List[ConnectionOutMessage] = list()
+        self.disconnect = False
+        self.out_gamedata = list()
 
     @property
     def client_id(self):
@@ -34,18 +46,26 @@ class Connection:
         pass
 
     def flush_out_events(self):
-        pass
+        if self.out_gamedata:
+            self.out_events.append(
+                ConnectionOutMessage(
+                    ConnectionOutMessageType.GAMEDATA,
+                    self.details.client_id,
+                    self.out_gamedata,
+                )
+            )
+        self.out_gamedata = list()
 
 
 class ConnectionService(Service):
-
-    def __init__(self):
+    def __init__(self, app):
+        super().__init__(app)
         self.app.conn = self
         self.next_id: int = 0
         self.connections: Dict[str, Connection] = dict()
         self.in_events: Optional[asyncio.Queue] = None
         self.out_events: Optional[asyncio.Queue] = None
-        self.conn_class = self.app.classes['game']['connection']
+        self.conn_class = self.app.classes["game"]["connection"]
 
     async def async_setup(self):
         self.in_events = asyncio.Queue()
@@ -66,19 +86,39 @@ class ConnectionService(Service):
     async def handle_out_events(self):
         while True:
             events = list()
+            to_disconnect = list()
             for conn in self.connections.values():
                 conn.flush_out_events()
                 if conn.out_events:
                     events.extend(conn.out_events)
                     conn.out_events.clear()
+                if conn.disconnect:
+                    to_disconnect.append(conn)
 
             if events:
-                await self.app.link.out_events.put(PortalOutMessage(PortalOutMessageType.EVENTS, os.getpid(), events))
+                await self.app.link.out_events.put(
+                    PortalOutMessage(PortalOutMessageType.EVENTS, os.getpid(), events)
+                )
+
+            if to_disconnect:
+                for conn in to_disconnect:
+                    self.remove_client(conn)
+                dis_events = [
+                    ConnectionOutMessage(
+                        ConnectionOutMessageType.DISCONNECT, conn.client_id, None
+                    )
+                    for conn in to_disconnect
+                ]
+                await self.app.link.out_events.put(
+                    PortalOutMessage(
+                        PortalOutMessageType.EVENTS, os.getpid(), dis_events
+                    )
+                )
+
             await asyncio.sleep(0.1)
 
-
     def get_or_create_client(self, details) -> Connection:
-        if (conn := self.connections.get(details.client_id, None)):
+        if (conn := self.connections.get(details.client_id, None)) :
             conn.on_update(details)
             return conn
         else:
@@ -106,7 +146,7 @@ class ConnectionService(Service):
             details: ConnectionDetails = ConnectionDetails.from_dict(ev.data)
             conn = self.get_or_create_client(details)
             return
-        if (conn := self.connections.get(ev.client_id, None)):
+        if (conn := self.connections.get(ev.client_id, None)) :
             if ev.msg_type == ConnectionInMessageType.DISCONNECT:
                 self.remove_client(conn)
             else:
@@ -115,4 +155,4 @@ class ConnectionService(Service):
             pass
 
     def remove_client(self, conn: Connection):
-        pass
+        self.connections.pop(conn.details.client_id, None)

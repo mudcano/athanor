@@ -2,11 +2,17 @@ import random
 import string
 import time
 from typing import List
-from athanor.shared import ConnectionDetails, ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType, MudProtocol
+from athanor.shared import (
+    ConnectionDetails,
+    ConnectionInMessageType,
+    ConnectionOutMessage,
+    ConnectionInMessage,
+    ConnectionOutMessageType,
+    MudProtocol,
+)
 
 
 class MudConnection:
-
     def __init__(self, listener):
         self.listener = listener
         self.conn_id: str = self.generate_name()
@@ -33,7 +39,11 @@ class MudConnection:
 
     def on_start(self):
         self.started = True
-        self.in_events.append(ConnectionInMessage(ConnectionInMessageType.READY, self.conn_id, self.details))
+        self.in_events.append(
+            ConnectionInMessage(
+                ConnectionInMessageType.READY, self.conn_id, self.details
+            )
+        )
 
     def check_ready(self):
         pass

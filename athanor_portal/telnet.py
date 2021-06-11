@@ -3,16 +3,25 @@ import time
 from asyncio import Protocol, transports
 from typing import Optional, Union, Dict, Set, List
 
-from mudtelnet import TelnetFrame, TelnetConnection, TelnetOutMessage, TelnetOutMessageType
+from mudtelnet import (
+    TelnetFrame,
+    TelnetConnection,
+    TelnetOutMessage,
+    TelnetOutMessageType,
+)
 from mudtelnet import TelnetInMessage, TelnetInMessageType
 from athanor.shared import COLOR_MAP
-from athanor.shared import ConnectionInMessageType, ConnectionOutMessage, ConnectionInMessage, ConnectionOutMessageType
+from athanor.shared import (
+    ConnectionInMessageType,
+    ConnectionOutMessage,
+    ConnectionInMessage,
+    ConnectionOutMessageType,
+)
 
 from .conn import MudConnection
 
 
 class TelnetMudConnection(MudConnection, Protocol):
-
     def __init__(self, listener):
         super().__init__(listener)
         self.telnet = TelnetConnection()
@@ -39,7 +48,9 @@ class TelnetMudConnection(MudConnection, Protocol):
             frame = TelnetFrame.parse_consume(self.in_buffer)
             if not frame:
                 break
-            events_buffer = self.telnet_in_events if self.started else self.telnet_pending_events
+            events_buffer = (
+                self.telnet_in_events if self.started else self.telnet_pending_events
+            )
             out_buffer = bytearray()
             changed = self.telnet.process_frame(frame, out_buffer, events_buffer)
             if out_buffer:
@@ -47,15 +58,18 @@ class TelnetMudConnection(MudConnection, Protocol):
             if changed:
                 self.update_details(changed)
                 if self.started:
-                    self.in_events.append(ConnectionInMessage(ConnectionInMessageType.UPDATE, self.conn_id,
-                                                              self.details))
+                    self.in_events.append(
+                        ConnectionInMessage(
+                            ConnectionInMessageType.UPDATE, self.conn_id, self.details
+                        )
+                    )
 
         if self.telnet_in_events:
             self.process_telnet_events()
 
     def connection_made(self, transport: transports.Transport) -> None:
         self.transport = transport
-        addr, port = transport.get_extra_info('peername')
+        addr, port = transport.get_extra_info("peername")
         self.details.host_address = addr
         self.details.host_port = port
         out_buffer = bytearray()
@@ -69,8 +83,8 @@ class TelnetMudConnection(MudConnection, Protocol):
                 for feature, value in v.items():
                     setattr(self.details, feature, value)
             elif k == "naws":
-                self.details.width = v.get('width', 78)
-                self.details.height = v.get('height', 24)
+                self.details.width = v.get("width", 78)
+                self.details.height = v.get("height", 24)
             elif k == "mccp2":
                 for feature, val in v.items():
                     if feature == "active":
@@ -96,11 +110,17 @@ class TelnetMudConnection(MudConnection, Protocol):
 
     def telnet_in_to_conn_in(self, ev: TelnetInMessage):
         if ev.msg_type == TelnetInMessageType.LINE:
-            return ConnectionInMessage(ConnectionInMessageType.LINE, self.conn_id, ev.data.decode())
+            return ConnectionInMessage(
+                ConnectionInMessageType.GAMEDATA,
+                self.conn_id,
+                (("line", (ev.data.decode(),), dict()),),
+            )
         elif ev.msg_type == TelnetInMessageType.GMCP:
             return None
         elif ev.msg_type == TelnetInMessageType.MSSP:
-            return ConnectionInMessage(ConnectionInMessageType.REQSTATUS, self.conn_id, ev.data)
+            return ConnectionInMessage(
+                ConnectionInMessageType.REQSTATUS, self.conn_id, ev.data
+            )
         else:
             return None
 
@@ -112,21 +132,30 @@ class TelnetMudConnection(MudConnection, Protocol):
         self.telnet_in_events.clear()
 
     def conn_out_to_telnet_out(self, ev: ConnectionOutMessage):
-        if ev.msg_type == ConnectionOutMessageType.LINE:
-            return TelnetOutMessage(TelnetOutMessageType.LINE, ev.data)
-        elif ev.msg_type == ConnectionOutMessageType.TEXT:
-            return TelnetOutMessage(TelnetOutMessageType.TEXT, ev.data)
-        elif ev.msg_type == ConnectionOutMessageType.PROMPT:
-            return TelnetOutMessage(TelnetOutMessageType.PROMPT, ev.data)
+        out = list()
+        if ev.msg_type == ConnectionOutMessageType.GAMEDATA:
+            for cmd, args, kwargs in ev.data:
+                if cmd == "text":
+                    out.append(TelnetOutMessage(TelnetOutMessageType.TEXT, args[0]))
+                elif cmd == "line":
+                    out.append(TelnetOutMessage(TelnetOutMessageType.LINE, args[0]))
+                elif cmd == "prompt":
+                    out.append(TelnetOutMessage(TelnetOutMessageType.PROMPT, args[0]))
+                else:
+                    out.append(
+                        TelnetOutMessage(TelnetOutMessageType.GMCP, (cmd, args, kwargs))
+                    )
         elif ev.msg_type == ConnectionOutMessageType.MSSP:
-            return TelnetOutMessage(TelnetOutMessageType.MSSP, ev.data)
-        else:
-            return None
+            out.append(TelnetOutMessage(TelnetOutMessageType.MSSP, ev.data))
+        elif ev.msg_type == ConnectionOutMessageType.DISCONNECT:
+            self.ended = True
+        return out
 
     def process_out_event(self, ev: ConnectionOutMessage):
-        msg = self.conn_out_to_telnet_out(ev)
-        if msg:
+        for msg in self.conn_out_to_telnet_out(ev):
             outbox = bytearray()
             self.telnet.process_out_message(msg, outbox)
             if outbox:
                 self.transport.write(outbox)
+        if self.ended:
+            self.transport.close()

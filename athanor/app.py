@@ -21,9 +21,9 @@ class BaseConfig:
     """
 
     def __init__(self):
-        self.name: str = 'athanor'
+        self.name: str = "athanor"
         self.process_name: str = "Athanor Application"
-        self.application: str = 'athanor.app.Application'
+        self.application: str = "athanor.app.Application"
 
         # A Dict-of-Dicts that stores categorized, named Python paths to classes used by
         # the project.
@@ -62,10 +62,7 @@ class BaseConfig:
         self._config_link()
 
     def _config_link(self):
-        self.link = {
-            "interface": "localhost",
-            "port": 7998
-        }
+        self.link = {"interface": "localhost", "port": 7998}
 
     def _config_classes(self):
         """
@@ -80,9 +77,9 @@ class BaseConfig:
         internal is for your internal network. Same as loopback unless configured otherwise.
         external is for any internet-facing adapters.
         """
-        self.interfaces['loopback'] = "localhost"
-        self.interfaces['internal'] = "localhost"
-        self.interfaces['external'] = socket.gethostname()
+        self.interfaces["loopback"] = "localhost"
+        self.interfaces["internal"] = "localhost"
+        self.interfaces["external"] = socket.gethostname()
         self.interfaces["public"] = socket.gethostname()
         self.interfaces["any"] = ""
         self.interfaces["localhost"] = "localhost"
@@ -97,7 +94,7 @@ class BaseConfig:
     def _init_tls_contexts(self):
         for k, v in self.tls.items():
             new_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-            new_context.load_cert_chain(v['pem'], v['key'])
+            new_context.load_cert_chain(v["pem"], v["key"])
             self.tls_contexts[k] = new_context
 
     def _config_servers(self):
@@ -107,12 +104,12 @@ class BaseConfig:
         pass
 
     def _config_log_handlers(self):
-        for name in ('application', 'server', 'client'):
-            handler = TimedRotatingFileHandler(filename=f'logs/{name}.log', when='D')
+        for name in ("application", "server", "client"):
+            handler = TimedRotatingFileHandler(filename=f"logs/{name}.log", when="D")
             self.log_handlers[name] = handler
 
     def _config_logs(self):
-        for name in ('application', 'server', 'client'):
+        for name in ("application", "server", "client"):
             log = logging.getLogger(name)
             log.addHandler(self.log_handlers[name])
             self.logs[name] = log
@@ -137,6 +134,7 @@ class LauncherConfig:
         """
         By default, does nothing...
         """
+
 
 class Application:
     """
@@ -179,15 +177,22 @@ class Application:
                 found = import_from_module(path)
                 self.classes[category][name] = found
                 # Very few classes will likely have this classmethod, but... just in case...
-                if hasattr(found, 'class_init'):
+                if hasattr(found, "class_init"):
                     found_classes.append(found)
 
-        for name, v in sorted(self.classes['services'].items(), key=lambda x: getattr(x[1], 'init_order', 0)):
-            self.services[name] = v()
+        for name, v in sorted(
+            self.classes["services"].items(),
+            key=lambda x: getattr(x[1], "init_order", 0),
+        ):
+            self.services[name] = v(self)
 
-        self.services_update = sorted(self.services.values(), key=lambda x: getattr(x, 'update_order', 0))
+        self.services_update = sorted(
+            self.services.values(), key=lambda x: getattr(x, "update_order", 0)
+        )
 
-        for service in sorted(self.services.values(), key=lambda s: getattr(s, 'load_order', 0)):
+        for service in sorted(
+            self.services.values(), key=lambda s: getattr(s, "load_order", 0)
+        ):
             service.setup()
 
         # call class inits on imported classes, if necessary.
@@ -208,7 +213,9 @@ class Application:
         await asyncio.gather(self.async_main_task(), self.async_run_loop(), *a_services)
 
     async def async_setup(self):
-        for service in sorted(self.services.values(), key=lambda s: getattr(s, 'load_order', 0)):
+        for service in sorted(
+            self.services.values(), key=lambda s: getattr(s, "load_order", 0)
+        ):
             await service.async_setup()
 
     def start_async(self):
@@ -292,6 +299,7 @@ class Service:
     """
     Base class used for all Services.
     """
+
     name: Optional[str] = None
     init_order = 0
     setup_order = 0

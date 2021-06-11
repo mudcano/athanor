@@ -1,6 +1,3 @@
-import mudstring
-mudstring.install()
-
 from athanor.app import Application as BaseApplication
 from .conn import ConnectionService
 from .link import LinkService

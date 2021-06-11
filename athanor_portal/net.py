@@ -8,7 +8,12 @@ from enum import IntEnum
 from athanor.app import Service
 
 from athanor.shared import PortalOutMessageType
-from athanor.shared import ServerInMessageType, ServerInMessage, ConnectionOutMessage, ConnectionOutMessageType
+from athanor.shared import (
+    ServerInMessageType,
+    ServerInMessage,
+    ConnectionOutMessage,
+    ConnectionOutMessageType,
+)
 
 from .conn import MudConnection
 from .telnet import TelnetMudConnection
@@ -21,10 +26,25 @@ class MudProtocol(IntEnum):
 
 
 class MudListener:
-    __slots__ = ['service', 'name', 'interface', 'port', 'protocol', 'ssl_context', 'server']
+    __slots__ = [
+        "service",
+        "name",
+        "interface",
+        "port",
+        "protocol",
+        "ssl_context",
+        "server",
+    ]
 
-    def __init__(self, service: "NetService", name: str, interface: str, port: int, protocol: MudProtocol,
-                 ssl_context: Optional[ssl.SSLContext] = None):
+    def __init__(
+        self,
+        service: "NetService",
+        name: str,
+        interface: str,
+        port: int,
+        protocol: MudProtocol,
+        ssl_context: Optional[ssl.SSLContext] = None,
+    ):
         self.service: "NetService" = service
         self.name: str = name
         self.interface: str = interface
@@ -36,11 +56,17 @@ class MudListener:
     async def async_setup(self):
         if self.protocol == MudProtocol.TELNET:
             loop = asyncio.get_event_loop()
-            self.server = await loop.create_server(self.accept_telnet, self.interface, self.port,
-                                                   ssl=self.ssl_context, start_serving=False)
+            self.server = await loop.create_server(
+                self.accept_telnet,
+                self.interface,
+                self.port,
+                ssl=self.ssl_context,
+                start_serving=False,
+            )
         elif self.protocol == MudProtocol.WEBSOCKET:
-            self.server = websockets.serve(self.accept_websocket, self.interface, self.port,
-                                           ssl=self.ssl_context)
+            self.server = websockets.serve(
+                self.accept_websocket, self.interface, self.port, ssl=self.ssl_context
+            )
 
     def accept_telnet(self):
         conn = TelnetMudConnection(self)
@@ -60,8 +86,18 @@ class MudListener:
 
 
 class NetService(Service):
-    __slots__ = ['app', 'ssl_contexts', 'listeners', 'listeners', 'mudconnections', 'interfaces', 'selector',
-                 'ready_listeners', 'ready_readers', 'ready_writers']
+    __slots__ = [
+        "app",
+        "ssl_contexts",
+        "listeners",
+        "listeners",
+        "mudconnections",
+        "interfaces",
+        "selector",
+        "ready_listeners",
+        "ready_readers",
+        "ready_writers",
+    ]
 
     def __init__(self, app):
         super().__init__(app)
@@ -73,15 +109,23 @@ class NetService(Service):
         self.in_conn_events = list()
         self.out_conn_events = list()
 
-    def register_listener(self, name: str, interface: str, port: int, protocol: MudProtocol,
-                          ssl_context: Optional[str] = None):
+    def register_listener(
+        self,
+        name: str,
+        interface: str,
+        port: int,
+        protocol: MudProtocol,
+        ssl_context: Optional[str] = None,
+    ):
         if name in self.listeners:
             raise ValueError(f"A Listener is already using name: {name}")
         host = self.app.config.interfaces.get(interface, None)
         if host is None:
             raise ValueError(f"Interface not registered: {interface}")
         if port < 0 or port > 65535:
-            raise ValueError(f"Invalid port: {port}. Port must be number between 0 and 65535")
+            raise ValueError(
+                f"Invalid port: {port}. Port must be number between 0 and 65535"
+            )
         use_ssl = self.app.config.tls_contexts.get(ssl_context, None)
         if ssl_context and not use_ssl:
             raise ValueError(f"SSL Context not registered: {ssl_context}")
@@ -94,8 +138,13 @@ class NetService(Service):
                 protocol = MudProtocol(config.get("protocol", -1))
             except ValueError:
                 raise ValueError(f"Must provide a valid protocol for {name}!")
-            self.register_listener(name, config.get("interface", None), config.get("port", -1), protocol,
-                                   config.get("ssl", None))
+            self.register_listener(
+                name,
+                config.get("interface", None),
+                config.get("port", -1),
+                protocol,
+                config.get("ssl", None),
+            )
 
     async def async_setup(self):
         self.in_events = asyncio.Queue()
@@ -104,8 +153,11 @@ class NetService(Service):
             await listener.async_setup()
 
     async def async_run(self):
-        gathered = asyncio.gather(self.poll_in_events(), self.poll_out_events(),
-                                  *[listener.run() for listener in self.listeners.values()])
+        gathered = asyncio.gather(
+            self.poll_in_events(),
+            self.poll_out_events(),
+            *[listener.run() for listener in self.listeners.values()],
+        )
         await gathered
 
     async def poll_out_events(self):
@@ -115,7 +167,7 @@ class NetService(Service):
             if msg.msg_type == PortalOutMessageType.EVENTS:
                 for ev_dict in msg.data:
                     conn_out_msg = ConnectionOutMessage.from_dict(ev_dict)
-                    if (conn := self.mudconnections.get(conn_out_msg.client_id, None)):
+                    if (conn := self.mudconnections.get(conn_out_msg.client_id, None)) :
                         if conn_out_msg.msg_type == ConnectionOutMessageType.DISCONNECT:
                             ended.add(conn)
                         conn.process_out_event(conn_out_msg)
@@ -131,7 +183,9 @@ class NetService(Service):
 
         while True:
             ended = {conn for conn in self.mudconnections.values() if conn.ended}
-            not_ready = {conn for conn in self.mudconnections.values() if not conn.started}
+            not_ready = {
+                conn for conn in self.mudconnections.values() if not conn.started
+            }
             for conn in not_ready:
                 conn.check_ready()
 

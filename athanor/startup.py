@@ -8,7 +8,7 @@ from athanor.utils import import_from_module
 
 
 def main():
-    if (new_cwd := os.environ.get("ATHANOR_PROFILE")):
+    if (new_cwd := os.environ.get("ATHANOR_PROFILE")) :
         if not os.path.exists(new_cwd):
             raise ValueError("Improper Athanor profile!")
         os.chdir(os.path.abspath(new_cwd))
@@ -19,7 +19,7 @@ def main():
 
     # Step 1: get settings from profile.
     try:
-        conf = import_from_module(f'appdata.{app_name}.Config')
+        conf = import_from_module(f"appdata.{app_name}.Config")
     except Exception:
         raise Exception("Could not import config!")
 
@@ -31,8 +31,8 @@ def main():
     if not (core_class := import_from_module(config.application)):
         raise ValueError(f"Cannot import {app_name} from config applications")
 
-    pidfile = os.path.join('.', f'{app_name}.pid')
-    with open(pidfile, 'w') as p:
+    pidfile = os.path.join(".", f"{app_name}.pid")
+    with open(pidfile, "w") as p:
         p.write(str(os.getpid()))
 
     app_core = core_class(config)
@@ -49,6 +49,7 @@ def main():
         print(f"UNHANDLED EXCEPTION!")
     finally:
         os.remove(pidfile)
+
 
 if __name__ == "__main__":
     main()

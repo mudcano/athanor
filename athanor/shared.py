@@ -7,7 +7,11 @@ from typing import Optional
 from enum import IntEnum
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
-from websockets.exceptions import ConnectionClosedError, ConnectionClosed, ConnectionClosedOK
+from websockets.exceptions import (
+    ConnectionClosedError,
+    ConnectionClosed,
+    ConnectionClosedOK,
+)
 
 from athanor.app import Service
 
@@ -28,9 +32,10 @@ class MudProtocol(IntEnum):
             return "Unknown"
 
 
-#Shamelessly yoinked this IntEnum from Rich for K.I.S.S. purposes.
+# Shamelessly yoinked this IntEnum from Rich for K.I.S.S. purposes.
 class ColorSystem(IntEnum):
     """One of the 3 color system supported by terminals."""
+
     STANDARD = 1
     EIGHT_BIT = 2
     TRUECOLOR = 3
@@ -40,7 +45,7 @@ class ColorSystem(IntEnum):
 COLOR_MAP = {
     "ansi": ColorSystem.STANDARD,
     "xterm256": ColorSystem.EIGHT_BIT,
-    "truecolor": ColorSystem.TRUECOLOR
+    "truecolor": ColorSystem.TRUECOLOR,
 }
 
 
@@ -82,13 +87,12 @@ class ConnectionDetails:
 
 
 class ConnectionInMessageType(IntEnum):
-    LINE = 0
-    OOB = 1
-    CONNECT = 2
-    READY = 3
-    REQSTATUS = 4
-    DISCONNECT = 5
-    UPDATE = 6
+    GAMEDATA = 0
+    CONNECT = 1
+    READY = 2
+    REQSTATUS = 3
+    DISCONNECT = 4
+    UPDATE = 5
 
 
 @dataclass_json
@@ -100,12 +104,9 @@ class ConnectionInMessage:
 
 
 class ConnectionOutMessageType(IntEnum):
-    LINE = 0
-    TEXT = 1
-    PROMPT = 2
-    OOB = 3
-    MSSP = 4
-    DISCONNECT = 5
+    GAMEDATA = 0
+    MSSP = 1
+    DISCONNECT = 2
 
 
 @dataclass_json
@@ -145,7 +146,6 @@ class ServerInMessage:
 
 
 class LinkProtocol:
-
     def __init__(self, service, ws, path):
         self.service = service
         self.connection = ws
@@ -180,23 +180,24 @@ class LinkProtocol:
     async def write(self):
         while self.running:
             msg = await self.outbox.get()
-            #print(f"{self.service.app.config.name.upper()} SENDING MESSAGE: {msg}")
+            # print(f"{self.service.app.config.name.upper()} SENDING MESSAGE: {msg}")
             if isinstance(msg, str):
                 await self.connection.send(msg)
             else:
                 await self.connection.send(orjson.dumps(msg))
 
     async def process_message(self, message):
-        #print(f"{self.service.app.config.name.upper()} RECEIVED MESSAGE: {message}")
+        # print(f"{self.service.app.config.name.upper()} RECEIVED MESSAGE: {message}")
         if isinstance(message, bytes):
             data = orjson.loads(message.decode())
             await self.service.message_from_link(data)
         else:
-            print(f"{self.service.app.config.name} got unknown websocket message: {message}")
+            print(
+                f"{self.service.app.config.name} got unknown websocket message: {message}"
+            )
 
 
 class LinkService(Service):
-
     def __init__(self, app):
         super().__init__(app)
         self.app.link = self
@@ -214,7 +215,9 @@ class LinkService(Service):
         self.interface = interface
         port = int(link_conf["port"])
         if port < 0 or port > 65535:
-            raise ValueError(f"Invalid port: {port}. Port must be 16-bit unsigned integer")
+            raise ValueError(
+                f"Invalid port: {port}. Port must be 16-bit unsigned integer"
+            )
         self.port = port
 
     async def async_setup(self):
@@ -249,13 +252,14 @@ class LinkService(Service):
 
 
 class LinkServiceServer(LinkService):
-
     def __init__(self, app):
         super().__init__(app)
         self.listener = None
 
     async def async_run(self):
-        await asyncio.gather(self.listener, self.handle_in_events(), self.handle_out_events())
+        await asyncio.gather(
+            self.listener, self.handle_in_events(), self.handle_out_events()
+        )
 
     async def async_setup(self):
         await super().async_setup()
@@ -263,9 +267,10 @@ class LinkServiceServer(LinkService):
 
 
 class LinkServiceClient(LinkService):
-
     async def async_run(self):
-        await asyncio.gather(self.async_link(), self.handle_in_events(), self.handle_out_events())
+        await asyncio.gather(
+            self.async_link(), self.handle_in_events(), self.handle_out_events()
+        )
 
     async def async_link(self):
         url = f"ws://{self.interface}:{self.port}"
