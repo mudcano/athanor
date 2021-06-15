@@ -1,9 +1,12 @@
 import asyncio
 
-from websockets.exceptions import ConnectionClosedError, ConnectionClosed, ConnectionClosedOK
+from websockets.exceptions import (
+    ConnectionClosedError,
+    ConnectionClosed,
+    ConnectionClosedOK,
+)
 
-from . conn import MudConnection
-
+from .conn import MudConnection
 
 
 class WebSocketConnection(MudConnection):

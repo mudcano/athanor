@@ -5,7 +5,6 @@ import asyncio
 
 
 class LinkService(LinkServiceClient):
-
     def on_new_link(self):
         msg = PortalOutMessage(PortalOutMessageType.HELLO, os.getpid(), None)
         self.link.outbox.put_nowait(msg)
@@ -20,7 +19,9 @@ class LinkService(LinkServiceClient):
             await self.app.conn.in_events.put(msg)
 
     async def async_run(self):
-        await asyncio.gather(self.async_link(), self.handle_in_events(), self.handle_out_events())
+        await asyncio.gather(
+            self.async_link(), self.handle_in_events(), self.handle_out_events()
+        )
 
     async def handle_in_events(self):
         pass

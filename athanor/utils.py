@@ -8,11 +8,11 @@ import string
 def import_from_module(path: str) -> typing.Any:
     if not path:
         raise ImportError("Cannot import null path!")
-    if '.' not in path:
+    if "." not in path:
         raise ImportError("Path is not in dot format!")
-    split_path = path.split('.')
+    split_path = path.split(".")
     identifier = split_path.pop(-1)
-    module = importlib.import_module('.'.join(split_path))
+    module = importlib.import_module(".".join(split_path))
     return getattr(module, identifier)
 
 
@@ -43,7 +43,9 @@ def to_str(text, session=None):
         except Exception:
             return repr(text)
 
-    default_encoding = session.protocol_flags.get("ENCODING", "utf-8") if session else "utf-8"
+    default_encoding = (
+        session.protocol_flags.get("ENCODING", "utf-8") if session else "utf-8"
+    )
     try:
         return text.decode(default_encoding)
     except (LookupError, UnicodeDecodeError):
@@ -80,7 +82,9 @@ def inherits_from(obj, parent):
         # this is a class
         obj_paths = ["%s.%s" % (mod.__module__, mod.__name__) for mod in obj.mro()]
     else:
-        obj_paths = ["%s.%s" % (mod.__module__, mod.__name__) for mod in obj.__class__.mro()]
+        obj_paths = [
+            "%s.%s" % (mod.__module__, mod.__name__) for mod in obj.__class__.mro()
+        ]
 
     if isinstance(parent, str):
         # a given string path, for direct matching
@@ -189,7 +193,9 @@ def fresh_uuid4(existing) -> uuid:
     return fresh_uuid
 
 
-def partial_match(match_text: str, candidates: typing.Iterable[typing.Any], key: callable = str) -> typing.Optional[typing.Any]:
+def partial_match(
+    match_text: str, candidates: typing.Iterable[typing.Any], key: callable = str
+) -> typing.Optional[typing.Any]:
     """
     Given a list of candidates and a string to search for, does a case-insensitive partial name search against all
     candidates, preferring exact matches.
