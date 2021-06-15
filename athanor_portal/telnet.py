@@ -96,7 +96,8 @@ class TelnetMudConnection(MudConnection, Protocol):
 
     def telnet_in_to_conn_in(self, ev: TelnetInMessage):
         if ev.msg_type == TelnetInMessageType.LINE:
-            return ConnectionInMessage(ConnectionInMessageType.LINE, self.conn_id, ev.data.decode())
+            return ConnectionInMessage(ConnectionInMessageType.GAMEDATA, self.conn_id, (('line', (ev.data.decode(),),
+                                                                                         dict()),))
         elif ev.msg_type == TelnetInMessageType.GMCP:
             return None
         elif ev.msg_type == TelnetInMessageType.MSSP:
@@ -112,21 +113,23 @@ class TelnetMudConnection(MudConnection, Protocol):
         self.telnet_in_events.clear()
 
     def conn_out_to_telnet_out(self, ev: ConnectionOutMessage):
-        if ev.msg_type == ConnectionOutMessageType.LINE:
-            return TelnetOutMessage(TelnetOutMessageType.LINE, ev.data)
-        elif ev.msg_type == ConnectionOutMessageType.TEXT:
-            return TelnetOutMessage(TelnetOutMessageType.TEXT, ev.data)
-        elif ev.msg_type == ConnectionOutMessageType.PROMPT:
-            return TelnetOutMessage(TelnetOutMessageType.PROMPT, ev.data)
-        elif ev.msg_type == ConnectionOutMessageType.MSSP:
-            return TelnetOutMessage(TelnetOutMessageType.MSSP, ev.data)
-        else:
-            return None
+        out = list()
+        if ev.msg_type == ConnectionOutMessageType.GAMEDATA:
+            for cmd, args, kwargs in ev.data:
+                cmd = cmd.lower().strip()
+                if cmd == 'line':
+                    out.append(TelnetOutMessage(TelnetOutMessageType.LINE, args[0]))
+                elif cmd == 'text':
+                    out.append(TelnetOutMessage(TelnetOutMessageType.TEXT, args[0]))
+                elif cmd == 'prompt':
+                    out.append(TelnetOutMessage(TelnetOutMessageType.PROMPT, args[0]))
+                else:
+                    out.append(TelnetOutMessage(TelnetOutMessageType.MSDP, (cmd, args, kwargs)))
+        return out
 
     def process_out_event(self, ev: ConnectionOutMessage):
-        msg = self.conn_out_to_telnet_out(ev)
-        if msg:
-            outbox = bytearray()
+        outbox = bytearray()
+        for msg in self.conn_out_to_telnet_out(ev):
             self.telnet.process_out_message(msg, outbox)
-            if outbox:
-                self.transport.write(outbox)
+        if outbox:
+            self.transport.write(outbox)

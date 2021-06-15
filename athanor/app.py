@@ -183,7 +183,7 @@ class Application:
                     found_classes.append(found)
 
         for name, v in sorted(self.classes['services'].items(), key=lambda x: getattr(x[1], 'init_order', 0)):
-            self.services[name] = v()
+            self.services[name] = v(self)
 
         self.services_update = sorted(self.services.values(), key=lambda x: getattr(x, 'update_order', 0))
 

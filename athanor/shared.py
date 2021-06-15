@@ -82,11 +82,10 @@ class ConnectionDetails:
 
 
 class ConnectionInMessageType(IntEnum):
-    LINE = 0
-    OOB = 1
-    CONNECT = 2
-    READY = 3
-    REQSTATUS = 4
+    GAMEDATA = 0
+    CONNECT = 1
+    READY = 2
+    MSSP = 4
     DISCONNECT = 5
     UPDATE = 6
 
@@ -100,12 +99,9 @@ class ConnectionInMessage:
 
 
 class ConnectionOutMessageType(IntEnum):
-    LINE = 0
-    TEXT = 1
-    PROMPT = 2
-    OOB = 3
-    MSSP = 4
-    DISCONNECT = 5
+    GAMEDATA = 0
+    MSSP = 1
+    DISCONNECT = 2
 
 
 @dataclass_json
